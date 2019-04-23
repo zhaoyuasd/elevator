@@ -52,6 +52,8 @@ public class Building {
   public static Floor FOURFloor=new Floor(4);
   public static Floor FIVEFloor=new Floor(5);
  
-  
+  public static Elevator left=new Elevator(BottomFloor);
+  public static Elevator middle=new Elevator(TWOFloor);
+  public static Elevator right=new Elevator(FIVEFloor);
   
 }
