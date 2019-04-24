@@ -9,6 +9,8 @@ public class Test {
 		  Building.left.start();
 		  Building.schdule();
 		  new Person(2,5);
+		  new Person(4,-1);
+		  new Person(2,-1);
 		 
 }
 }

@@ -64,7 +64,7 @@ public class Elevator extends Thread{
 	}
 
 	public void addStopFloor(Floor targetPosition) {
-		if(!toStop.contains(targetPosition))
+		//if(!toStop.contains(targetPosition))
 		    toStop.add(targetPosition);
 		//if(toStop.size()>=2) {
 			if((running.code&RUNNING.UP.code)>0) {
