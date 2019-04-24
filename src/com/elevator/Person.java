@@ -1,5 +1,7 @@
 package com.elevator;
 
+import java.util.UUID;
+
 import com.elevator.Building.Floor;
 import com.elevator.Elevator.RUNNING;
 
@@ -16,19 +18,40 @@ public class Person {
 	
 	private RUNNING runState;
 	
-	public void getInElevator(Elevator  vator) {
+	private String uuid=UUID.randomUUID().toString();
+	
+	private void getInElevator(Elevator  vator) {
 		state=STATE.INELEVATOR;
 		vator.addInPerson(this);
 	}
 	
-	public void outElevator(Elevator  vator) {
+	private void outElevator(Elevator  vator) {
 		this.state=STATE.OUTELEVATOR;
 		vator.outPerson(this);
 	}
 	
-	public void setTargetFloor(Elevator  vator) {
+	private void setTargetFloor(Elevator  vator) {
 		vator.addStopFloor(this.targetPosition);
 	}
+	
+	public Boolean shouldEnterElevator(Elevator  vator) {
+		if((vator.running.code&runState.code)>0||vator.running==RUNNING.STILL) {
+			getInElevator(vator);
+			setTargetFloor(vator);
+			return true;
+		}
+		return false;
+	}
+	
+	public Boolean shouldOutElevator(Elevator  vator) {
+		if(vator.currentFloor.floorPostion==this.targetPosition.floorPostion)
+		{
+			outElevator(vator);
+			return true;
+		}
+		return false;
+	}
+	
 	
 	public Person(Floor  currentPosition,Floor  targetPosition) {
 		this.currentPosition=currentPosition;
@@ -37,12 +60,32 @@ public class Person {
 			runState=RUNNING.UP;
 		else if(currentPosition.floorPostion<targetPosition.floorPostion)
 			runState=RUNNING.DOWN;
-		else 
+		else {
 			System.out.println("同一层楼不做处理");
-		currentPosition.addToquen(this);
+			return;
+		}
+		currentPosition.addWaitPerson(this);
+	}
+	
+	@Override
+	public boolean equals(Object person) {
+	    if(person instanceof Person)	
+		   return this.uuid.equals(((Person)person).getUuid());
+	    
+	    return false;
 	}
 	
 	public RUNNING getRunState() {
 		return this.runState;
 	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public STATE getState() {
+		return state;
+	}
+	
+	
 }
