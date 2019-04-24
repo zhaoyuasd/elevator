@@ -21,7 +21,7 @@ public class Elevator extends Thread{
     public RUNNING running;
 	/* private BlockingQueue<Floor> toStop= new ArrayBlockingQueue(100); */
 	 
-	private  final  List<Floor>  toStop=new ArrayList(7);
+	private  volatile List<Floor>  toStop=new ArrayList(7);
 	/*
 	 * { for(int i=0;i<7;i++) toStop.add(null); }
 	 */
@@ -64,7 +64,8 @@ public class Elevator extends Thread{
 	}
 
 	public void addStopFloor(Floor targetPosition) {
-		toStop.add(targetPosition);
+		if(!toStop.contains(targetPosition))
+		    toStop.add(targetPosition);
 		//if(toStop.size()>=2) {
 			if((running.code&RUNNING.UP.code)>0) {
 				toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
@@ -80,8 +81,10 @@ public class Elevator extends Thread{
     
 	
 	private Floor getnextStop() {
+		//synchronized(toStop)  {
 		if(toStop.size()==0) return null;
 		return toStop.get(0);
+		//}
 	}
 	
 	private void done() {
@@ -89,7 +92,9 @@ public class Elevator extends Thread{
 	}
 	
 	private void done(Floor currentFloor) {
-		toStop.remove(currentFloor);
+		//synchronized(toStop)  {
+			toStop.remove(currentFloor);
+		//}
 	}
 	
 	public void run() {
@@ -142,12 +147,12 @@ public class Elevator extends Thread{
 			nextFloor=nextFloor-1;
 		runCosumTime();
 		currentFloor=Building.getFloorByNum(nextFloor);
-		System.out.println(String.format(netxstop,name,toStop.get(0).floorPostion,currentFloor.floorPostion));
+		System.out.println(String.format(netxstop,name,getnextStop().floorPostion,currentFloor.floorPostion));
 		if(getnextStop().floorPostion==currentFloor.floorPostion) {
+			done(currentFloor);
 			this.running.code=this.running.code|RUNNING.OPENDOOR.code;
 			informPerson(); //出
 			currentFloor.informPerson(this); //进
-			done(currentFloor);
 			this.running.code=this.running.code|RUNNING.CLOSEDOOR.code;
 		  }
 		}

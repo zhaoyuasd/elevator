@@ -84,9 +84,11 @@ public class Building {
 		
 	    @Override
 		public boolean equals(Object person) {
-		    if(person instanceof Floor)	
+	    	System.out.println("-----------开始equals 方法");
+		    if(person instanceof Floor) {	
+		    	System.out.println("-----------开始equals 方法   "+this.uuid.equals(((Floor)person).getUuid()));
 			   return this.uuid.equals(((Floor)person).getUuid());
-		    
+		    }
 		    return false;
 		}
   }
@@ -141,7 +143,7 @@ public class Building {
 			Floor todeal=queue.get(i);
 			if(todeal==null)	
 				continue;
-			System.out.println(String.format("收到去往 %d 楼的请求",todeal.floorPostion));
+			System.out.println(String.format("收到去往 %d 楼的请求  index为：%d",todeal.floorPostion,i));
 			dispatch(todeal);
 			
 		}
@@ -165,18 +167,17 @@ public class Building {
 				 target=itm;
 			 }
 		 }
-		
-		 if((target.running.code&RUNNING.UP.code)>0) {
-			 todeal.upRequest=false;
-			 if(!todeal.downRequest)
-				 queue.set(todeal.floorPostion+1,null);
-		 }
-		 if((target.running.code&RUNNING.DOWN.code)>0) {
-			 todeal.downRequest=false;
-			 if(!todeal.upRequest)
-				 queue.set(todeal.floorPostion+1,null);
-		 } 
-		    target.addStopFloor(todeal);
+		 target.addStopFloor(todeal);
+		/*
+		 * if((target.running.code&RUNNING.UP.code)>0) { todeal.upRequest=false;
+		 * if(!todeal.downRequest) queue.set(todeal.floorPostion+1,null); }
+		 * if((target.running.code&RUNNING.DOWN.code)>0) { todeal.downRequest=false;
+		 * if(!todeal.upRequest) queue.set(todeal.floorPostion+1,null); }
+		 * if(target.running.code==RUNNING.STILL.code) {
+		 * if(!todeal.downRequest||!todeal.upRequest) { todeal.downRequest=false;
+		 * todeal.upRequest=false; queue.set(todeal.floorPostion, null) ; }
+		 * target.addStopFloor(todeal); }
+		 */
 		    System.out.println(String.format("电梯：%s 已经受理该请求", target.name));
 	}
 	
@@ -202,8 +203,13 @@ public class Building {
 						return candidate;
 					}
 				}
-				else if(ele.running==RUNNING.STILL)
+				else if(ele.running==RUNNING.STILL) {
+					if(!todeal.downRequest) {
+						queue.set(todeal.floorPostion+1,null);
+					}
+					todeal.upRequest=false;
 					candidate.add(ele);
+				}
 			}
 		}
 		else  if(todeal.downRequest) {
@@ -223,8 +229,13 @@ public class Building {
 						return candidate;
 					}
 				}
-				else if(ele.running==RUNNING.STILL)
+				else if(ele.running==RUNNING.STILL) {
+					if(!todeal.upRequest) {
+						queue.set(todeal.floorPostion+1,null);
+					}
+					todeal.downRequest=false;
 					candidate.add(ele);
+				}
 			}
 		
 		}
