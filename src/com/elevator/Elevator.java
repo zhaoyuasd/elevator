@@ -8,7 +8,7 @@ import java.util.concurrent.BlockingQueue;
 
 import com.elevator.Building.Floor;
 
-public class Elevator {
+public class Elevator extends Thread{
 
 	public enum RUNNING{
 		UP(1<<2),DOWN(1<<4),STILL(0),OPENDOOR(1<<1),CLOSEDOOR(1<<3);
@@ -22,6 +22,9 @@ public class Elevator {
 	/* private BlockingQueue<Floor> toStop= new ArrayBlockingQueue(100); */
 	 
 	private  final  List<Floor>  toStop=new ArrayList(7);
+	/*
+	 * { for(int i=0;i<7;i++) toStop.add(null); }
+	 */
 	
 	public  Floor currentFloor;
 	
@@ -33,17 +36,27 @@ public class Elevator {
 	
 	private Integer currentSize=0;
 	
+	private String getWork="%s ：我在%d楼  接到了 去%d楼的请求";
+	private String outPerson="%s ：在%d楼下楼去了";
+	private String inPerson="%s ： 在%d楼进电梯了";
+	private String netxstop="%s :下一个要停的楼层是 %d楼层   目前处于 %d楼";
+	
 	private volatile  Floor nextToStop;
 	
 	public Boolean addInPerson(Person person) {
 		if(currentSize<Max) {
 			 persons.add(person);
 			 currentSize+=1;
-		     return true;
+		System.out.println(String.format(inPerson,name,currentFloor.floorPostion));		 
+		return true;
 		}
 		return false;
 	}
 
+	public Boolean couldGetIn() {
+		return currentSize<persons.size();
+	}
+	
 	public void outPerson(Person person) {
 		// TODO Auto-generated method stub
 		 persons.remove(person);
@@ -52,17 +65,22 @@ public class Elevator {
 
 	public void addStopFloor(Floor targetPosition) {
 		toStop.add(targetPosition);
-		if((running.code&RUNNING.UP.code)>0) {
-			toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
-		}else if((running.code&RUNNING.DOWN.code)>0) {
-			toStop.sort((a,b)->{return b.floorPostion-a.floorPostion;});
-		} 
-		else {
-			toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
-		}
+		//if(toStop.size()>=2) {
+			if((running.code&RUNNING.UP.code)>0) {
+				toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
+			}else if((running.code&RUNNING.DOWN.code)>0) {
+				toStop.sort((a,b)->{return b.floorPostion-a.floorPostion;});
+			} 
+			else {
+				toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
+			}
+		//}
+		System.out.println(String.format(netxstop,name,toStop.get(0).floorPostion,currentFloor.floorPostion));
 	}
     
+	
 	private Floor getnextStop() {
+		if(toStop.size()==0) return null;
 		return toStop.get(0);
 	}
 	
@@ -80,11 +98,13 @@ public class Elevator {
 			if(getnextStop()!=null) {
 				if(getnextStop().floorPostion>currentFloor.floorPostion) {
 					this.running.code=this.running.code|RUNNING.UP.code;
+					System.out.println(String.format(getWork,name,currentFloor.floorPostion,getnextStop().floorPostion));
 					work();
 					continue;
 				}
 				else if(getnextStop().floorPostion<currentFloor.floorPostion) {
 					this.running.code=this.running.code|RUNNING.DOWN.code;
+					System.out.println(String.format(getWork,name,currentFloor.floorPostion,getnextStop().floorPostion));
 					work();
 					continue;
 				}
@@ -95,6 +115,7 @@ public class Elevator {
 					 this.running=RUNNING.CLOSEDOOR;
 				}
 			}
+			 //System.out.println("没有活干 原地待命");
 			runCosumTime();
 		 }
 		}
@@ -121,6 +142,7 @@ public class Elevator {
 			nextFloor=nextFloor-1;
 		runCosumTime();
 		currentFloor=Building.getFloorByNum(nextFloor);
+		System.out.println(String.format(netxstop,name,toStop.get(0).floorPostion,currentFloor.floorPostion));
 		if(getnextStop().floorPostion==currentFloor.floorPostion) {
 			this.running.code=this.running.code|RUNNING.OPENDOOR.code;
 			informPerson(); //出
@@ -135,7 +157,8 @@ public class Elevator {
 	public void informPerson() {
 		 for(int i=0;i<persons.size();i++){
 			 if(persons.get(i)!=null)
-				 persons.get(i).shouldOutElevator(this);
+				if(persons.get(i).shouldOutElevator(this))
+					System.out.println(String.format(outPerson,name,currentFloor.floorPostion));
 		 }
 		 //persons.removeIf(person->{return person.getState()==STATE.INELEVATOR;});
 	}
@@ -146,4 +169,6 @@ public class Elevator {
 		this.running=RUNNING.STILL;
 		this.name=name;
 	}
+	
+	
 }

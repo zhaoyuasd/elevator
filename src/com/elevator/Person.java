@@ -9,22 +9,32 @@ public class Person {
 	public enum STATE{
 		INELEVATOR,
 		OUTELEVATOR;
-	}		
+	}	
+	// 所在楼层
 	private Floor  currentPosition;
 	
+	// 目标楼层
 	private Floor  targetPosition;
 	
+	// 状态
 	private STATE  state;
 	
+	// 运行状态
 	private RUNNING runState;
 	
+	// 比较一致
 	private String uuid=UUID.randomUUID().toString();
 	
-	private void getInElevator(Elevator  vator) {
-		state=STATE.INELEVATOR;
-		vator.addInPerson(this);
+	// 进入电梯
+	private Boolean getInElevator(Elevator  vator) {
+		if(vator.addInPerson(this)) {
+			state=STATE.INELEVATOR;
+			return true;
+		}
+		return false;
 	}
 	
+	// 出电梯
 	private void outElevator(Elevator  vator) {
 		this.state=STATE.OUTELEVATOR;
 		vator.outPerson(this);
@@ -34,15 +44,24 @@ public class Person {
 		vator.addStopFloor(this.targetPosition);
 	}
 	
+	
+	// 尝试进入电梯
 	public Boolean shouldEnterElevator(Elevator  vator) {
 		if((vator.running.code&runState.code)>0||vator.running==RUNNING.STILL) {
-			getInElevator(vator);
+		
+			//满员未上 在按一次电梯
+			if(!getInElevator(vator))
+			{
+				currentPosition.sendRequest(this);
+			}
 			setTargetFloor(vator);
 			return true;
 		}
 		return false;
 	}
 	
+	
+	// 尝试走出电梯
 	public Boolean shouldOutElevator(Elevator  vator) {
 		if(vator.currentFloor.floorPostion==this.targetPosition.floorPostion)
 		{
@@ -53,18 +72,19 @@ public class Person {
 	}
 	
 	
-	public Person(Floor  currentPosition,Floor  targetPosition) {
-		this.currentPosition=currentPosition;
-		this.targetPosition=targetPosition;
-		if(currentPosition.floorPostion>targetPosition.floorPostion)
+	// 初始化
+	public Person(int  currentPosition,int  targetPosition) {
+		this.currentPosition=Building.getFloorByNum(currentPosition);
+		this.targetPosition=Building.getFloorByNum(targetPosition);
+		if(currentPosition<targetPosition)
 			runState=RUNNING.UP;
-		else if(currentPosition.floorPostion<targetPosition.floorPostion)
+		else if(currentPosition>targetPosition)
 			runState=RUNNING.DOWN;
 		else {
 			System.out.println("同一层楼不做处理");
 			return;
 		}
-		currentPosition.addWaitPerson(this);
+		this.currentPosition.addWaitPerson(this);
 	}
 	
 	@Override

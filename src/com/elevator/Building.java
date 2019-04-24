@@ -17,22 +17,34 @@ public class Building {
 	 */
 	
 	public static final  List<Floor>  queue=new ArrayList(7);
+	private static void initQueue(){
+		for(int i=0;i<7;i++)
+			queue.add(null);
+	}
 	
 	public static volatile Boolean isWork=true;
 	
   public static class Floor{
+	  
 	  Floor(Integer floorPostion){
 		  this.floorPostion=floorPostion;
 	  }
 	 
+	  // 重写equal
 	 private String uuid=UUID.randomUUID().toString();
-	  
+	  // 楼层数字 
 	 public final Integer floorPostion;
+	  // 楼层等电梯的人
 	 public final List<Person> persons=new LinkedList(); 
 	 public static final Integer TOP=6;
 	 public static final Integer BOTTOM=-1;
+	 // 上楼请求
 	 public Boolean upRequest=false;
+	 
+	 // 下楼请求
 	 public Boolean downRequest=false;
+	 
+	 // 通知这个楼层的人电梯到了 可以进了
 	 public void informPerson(Elevator ele) {
 		 List<Person>  enter=new LinkedList(); 
 		 for(Person itm:persons) {
@@ -48,7 +60,9 @@ public class Building {
 		 sendRequest(person);
 	 }
 	 
-	 private void sendRequest(Person person) {
+	 // 坐电梯请求
+	 public void sendRequest(Person person) {
+		 System.out.println("开始处理请求");
 		 if(downRequest&&upRequest)
 			 return ;
 		 if(person.getRunState()!=null) {
@@ -56,7 +70,7 @@ public class Building {
 				 upRequest=true;
 			 else
 				 downRequest=true;
-			 
+			 System.out.println("加入请求队列"); 
 		  if(queue.get(this.floorPostion+1)==null)	 
 			    queue.set(this.floorPostion+1, this);  //按照序号存放
 			
@@ -90,15 +104,15 @@ public class Building {
   public static Elevator right=new Elevator(FIVEFloor,"right");
   
   private static List<Elevator> elevators =new ArrayList();
-  {
+  private static  void initElevators(){
 	  elevators.add(left);
-	  elevators.add(middle);
-	  elevators.add(right);
+	 // elevators.add(middle);
+	  //elevators.add(right);
   }
      
   
   private static List<Floor>  floors=new ArrayList();
-  {
+  private static void initfloors(){
 	  floors.add(BottomFloor);
 	  floors.add(ZEROFloor);
 	  floors.add(ONEFloor);
@@ -117,13 +131,22 @@ public class Building {
   
   
    public static void schdule() {
+	   System.out.println("开始 运行");
+	   initQueue();
+	   initfloors();
+	   initElevators();
+	   
+	   new Thread(()->{
 		for(int i=0;isWork;i=(i+1)%7) {
 			Floor todeal=queue.get(i);
 			if(todeal==null)	
 				continue;
+			System.out.println(String.format("收到去往 %d 楼的请求",todeal.floorPostion));
 			dispatch(todeal);
 			
 		}
+	   }).start();
+	   
    }
     //分派
 	private static void dispatch(Floor todeal) {
@@ -146,14 +169,15 @@ public class Building {
 		 if((target.running.code&RUNNING.UP.code)>0) {
 			 todeal.upRequest=false;
 			 if(!todeal.downRequest)
-				 queue.remove(todeal.floorPostion+1);
+				 queue.set(todeal.floorPostion+1,null);
 		 }
 		 if((target.running.code&RUNNING.DOWN.code)>0) {
 			 todeal.downRequest=false;
 			 if(!todeal.upRequest)
-				 queue.remove(todeal.floorPostion+1);
+				 queue.set(todeal.floorPostion+1,null);
 		 } 
 		    target.addStopFloor(todeal);
+		    System.out.println(String.format("电梯：%s 已经受理该请求", target.name));
 	}
 	
 	
@@ -169,11 +193,11 @@ public class Building {
 					else if(ele.currentFloor.floorPostion<todeal.floorPostion)
 						candidate.add(ele);
 					else if((ele.running.code&RUNNING.OPENDOOR.code)>0) {
-						todeal.informPerson(ele);
-						todeal.upRequest=false;
 						if(!todeal.downRequest) {
-							queue.remove(todeal.floorPostion+1);
+							queue.set(todeal.floorPostion+1,null);
 						}
+						todeal.upRequest=false;
+						todeal.informPerson(ele); //这里可能会发送额外的请求
 						candidate.clear();
 						return candidate;
 					}
@@ -190,11 +214,11 @@ public class Building {
 					else if(ele.currentFloor.floorPostion>todeal.floorPostion)
 						candidate.add(ele);
 					else if((ele.running.code&RUNNING.OPENDOOR.code)>0) {
-						todeal.informPerson(ele);
-						todeal.downRequest=false;
 						if(!todeal.upRequest) {
-							queue.remove(todeal.floorPostion+1);
+							queue.set(todeal.floorPostion+1,null);
 						}
+						todeal.downRequest=false;
+						todeal.informPerson(ele); //这里可能会发送额外的请求
 						candidate.clear();
 						return candidate;
 					}
