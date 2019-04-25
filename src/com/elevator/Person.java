@@ -47,7 +47,7 @@ public class Person {
 	
 	// 尝试进入电梯
 	public Boolean shouldEnterElevator(Elevator  vator) {
-		if((vator.running.code&runState.code)>0||vator.running==RUNNING.STILL) {
+		if((vator.getRunning()&runState.code)>0||vator.getRunning()==RUNNING.STILL.code) {
 		
 			//满员未上 在按一次电梯
 			if(!getInElevator(vator))
