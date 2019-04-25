@@ -226,7 +226,7 @@ public class Building {
 					}
 				}
 				else if(ele.getRunning()==RUNNING.STILL.code) {
-					System.out.println(ele.name+":电梯目前为 静止状态 可以处理上楼请求");
+					System.out.println(ele.name+":电梯目前为 asd静止状态 可以处理上楼请求");
 					if(!todeal.downRequest) {
 						queue.set(todeal.floorPostion+1,null);
 					}
