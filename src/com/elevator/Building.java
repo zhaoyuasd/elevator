@@ -161,8 +161,10 @@ public class Building {
 		handleRequest(list,todeal);
 	}
 	private static void handleRequest(List<Elevator> list, Floor todeal) {
-		if(list==null||list.size()==0)
+		if(list==null||list.size()==0) {
+			System.out.println("暂时没有可以处理该请求的电梯");
 			return ;
+		}
 		Elevator target=null;
 		Integer distance=10;
 		for(Elevator itm:list) {
@@ -172,17 +174,25 @@ public class Building {
 				target=itm;
 			}
 		}
+
+		// 這裡處理完后 要把請求從列表裡面清楚 避免重複發送
+		if((target.running.code&RUNNING.UP.code)>0) {
+			todeal.upRequest=false;
+			if(!todeal.downRequest)
+				queue.set(todeal.floorPostion+1,null);
+		}
+		if((target.running.code&RUNNING.DOWN.code)>0) {
+			todeal.downRequest=false;
+			if(!todeal.upRequest)
+				queue.set(todeal.floorPostion+1,null); }
+		if(target.running.code==RUNNING.STILL.code) {
+			if(!todeal.downRequest||!todeal.upRequest) {
+				todeal.downRequest=false;
+				todeal.upRequest=false;
+				queue.set(todeal.floorPostion, null) ; }
+			target.addStopFloor(todeal); }
+
 		target.addStopFloor(todeal);
-		/*
-		 * if((target.running.code&RUNNING.UP.code)>0) { todeal.upRequest=false;
-		 * if(!todeal.downRequest) queue.set(todeal.floorPostion+1,null); }
-		 * if((target.running.code&RUNNING.DOWN.code)>0) { todeal.downRequest=false;
-		 * if(!todeal.upRequest) queue.set(todeal.floorPostion+1,null); }
-		 * if(target.running.code==RUNNING.STILL.code) {
-		 * if(!todeal.downRequest||!todeal.upRequest) { todeal.downRequest=false;
-		 * todeal.upRequest=false; queue.set(todeal.floorPostion, null) ; }
-		 * target.addStopFloor(todeal); }
-		 */
 		System.out.println(String.format("电梯：%s 已经受理该请求", target.name));
 	}
 
@@ -194,6 +204,7 @@ public class Building {
 		if(todeal.upRequest) {
 			for(Elevator ele:elevators) {
 				if((ele.running.code&RUNNING.UP.code)>0) {
+					System.out.println("电梯目前为 上楼状态 可以处理上楼请求");
 					if(ele.currentFloor.floorPostion>todeal.floorPostion)
 						continue;
 					else if(ele.currentFloor.floorPostion<todeal.floorPostion)
@@ -209,6 +220,7 @@ public class Building {
 					}
 				}
 				else if(ele.running.code==RUNNING.STILL.code) {
+					System.out.println("电梯目前为 静止状态 可以处理上楼请求");
 					if(!todeal.downRequest) {
 						queue.set(todeal.floorPostion+1,null);
 					}
@@ -219,7 +231,9 @@ public class Building {
 		}
 		else  if(todeal.downRequest) {
 			for(Elevator ele:elevators) {
+				System.out.println("处理下楼请求");
 				if((ele.running.code&RUNNING.DOWN.code)>0) {
+					System.out.println("电梯目前为 下楼状态 可以处理下楼请求");
 					if(ele.currentFloor.floorPostion<todeal.floorPostion)
 						continue;
 					else if(ele.currentFloor.floorPostion>todeal.floorPostion)
@@ -235,6 +249,7 @@ public class Building {
 					}
 				}
 				else if(ele.running.code==RUNNING.STILL.code) {
+					System.out.println("电梯目前为 静止状态 可以处理下楼请求");
 					if(!todeal.upRequest) {
 						queue.set(todeal.floorPostion+1,null);
 					}

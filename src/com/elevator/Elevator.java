@@ -20,11 +20,16 @@ public class Elevator extends Thread{
 	}
 
 	// 运行状态 包括门的状态
-	public RUNNING running;
+	public  RUNNING running;
 
 	// 实际的运行方向 只包方向
-	private Integer  runDrirection;
+	private Integer  runDrirection=0;
 	/* private BlockingQueue<Floor> toStop= new ArrayBlockingQueue(100); */
+
+	public Integer getRunDrirection() {
+		return runDrirection;
+	}
+
 
 	private  volatile List<Floor>  toStop=new ArrayList(7);
 	/*
@@ -68,20 +73,40 @@ public class Elevator extends Thread{
 		currentSize-=1;
 	}
 
-	public void addStopFloor(Floor targetPosition) {
-		//if(!toStop.contains(targetPosition))
-		toStop.add(targetPosition);
-		//if(toStop.size()>=2) {
-		if((running.code&RUNNING.UP.code)>0) {
-			toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
-		}else if((running.code&RUNNING.DOWN.code)>0) {
-			toStop.sort((a,b)->{return b.floorPostion-a.floorPostion;});
+	// 这个方法会产生 ConcurrentModificationException 异常
+	// 产生原因是 人写入自己的要去的楼层 后进行排序
+	public  void addStopFloor(Floor targetPosition) {
+		synchronized (toStop) {
+			//if(!toStop.contains(targetPosition))
+			// 在电梯为still的时候临时指定运行的方向
+			// 这里指定一下方向 不然所有请求 看到电梯的状态都是静止的
+			toStop.add(targetPosition);
+			System.out.println(String.format("以受理 去往%d楼层的请求  目前状态 ：%d", targetPosition.floorPostion,this.running.code) );
+			if(this.running.code==0) {
+				//这俩个条件 并不能解决本层楼向上的请求
+				if(targetPosition.floorPostion>currentFloor.floorPostion) {
+					runDrirection=RUNNING.UP.code;
+					this.running.code=runDrirection;
+					System.out.println(" 从静止改为上楼状态");
+				}
+				else if(targetPosition.floorPostion<currentFloor.floorPostion) {
+					runDrirection=RUNNING.DOWN.code;
+					this.running.code=runDrirection;
+					System.out.println(" 从静止改为下楼状态");
+				}
+			}
+			//if(toStop.size()>=2) {
+			if((running.code&RUNNING.UP.code)>0) {
+				toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
+			}else if((running.code&RUNNING.DOWN.code)>0) {
+				toStop.sort((a,b)->{return b.floorPostion-a.floorPostion;});
+			}
+			else {
+				toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
+			}
+			//}
+			System.out.println(String.format(netxstop,name,toStop.get(0).floorPostion,currentFloor.floorPostion));
 		}
-		else {
-			toStop.sort((a,b)->{return a.floorPostion-b.floorPostion;});
-		}
-		//}
-		System.out.println(String.format(netxstop,name,toStop.get(0).floorPostion,currentFloor.floorPostion));
 	}
 
 
@@ -97,13 +122,13 @@ public class Elevator extends Thread{
 	}
 
 	private void done(Floor currentFloor) {
-		//synchronized(toStop)  {
-		toStop.remove(currentFloor);
-		//}
+		synchronized(toStop)  {
+			toStop.remove(currentFloor);
+		}
 	}
 
 	public void run() {
-		if(this.running==RUNNING.STILL) {
+		if(this.running.code==RUNNING.STILL.code) {
 			while(1==1) {
 				if(getnextStop()!=null) {
 					if(getnextStop().floorPostion>currentFloor.floorPostion) {
@@ -131,7 +156,7 @@ public class Elevator extends Thread{
 					}
 				}
 				//System.out.println("没有活干 原地待命");
-				runCosumTime();
+				//runCosumTime();
 			}
 		}
 	}
@@ -204,6 +229,5 @@ public class Elevator extends Thread{
 		this.running=RUNNING.STILL;
 		this.name=name;
 	}
-
 
 }
