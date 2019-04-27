@@ -6,7 +6,7 @@ import java.util.List;
 public class Test {
  public static void main(String[] args) {
 		
-		  Building.schdule();
+		  BuildingStatic.schdule();
 		  
 		  new  Person(2,0);
 		  new  Person(5,3);

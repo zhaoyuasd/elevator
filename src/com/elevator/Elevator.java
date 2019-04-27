@@ -6,35 +6,37 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import com.elevator.Building.Floor;
 
 public class Elevator extends Thread{
 
 	public enum RUNNING{
 		//4       16         0         2               8
-		UP(1<<2),DOWN(1<<4),STILL(0),OPENDOOR(1<<1),CLOSEDOOR(1<<3);
-		public  Integer code;
-		RUNNING(Integer code){
-			this.code=code;
-		}
+		UP, DOWN, STILL;/* ,OPENDOOR(1<<1),CLOSEDOOR(1<<3); */
 	}
 	
-	// 运行状态 包括门的状态
-    public volatile RUNNING running;
+	
+	public Object lockDirection=new Object();
+	
+	// 当前的运行状态
+    public  RUNNING currentRunningDirection=RUNNING.STILL;
     
+    // 当前接收指令后的运行方向 
+    // 下一个要处理的请求是上楼还是下楼  目前可能是静止
+    private RUNNING currentOrderDirection=RUNNING.STILL;
     
-    
-    public Integer  getRunning() {
-    	synchronized (running) {
-    		return running.code;
+    public void setCurrentOrderDirection(RUNNING currentOrderDirection) {
+    	synchronized (lockDirection) {
+			this.currentOrderDirection=currentOrderDirection;
 		}
-	}
+    }
+    
+    public RUNNING getCurrentOrderDirection() {
+    	synchronized (lockDirection) {
+			return this.currentOrderDirection;
+		}
+    }
+    
 
-	public void setRunning(Integer code) {
-		synchronized (running) {
-			this.running.code = code;
-		}
-	}
 
 
 	// 实际的运行方向 只包方向

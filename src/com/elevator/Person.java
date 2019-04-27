@@ -2,7 +2,6 @@ package com.elevator;
 
 import java.util.UUID;
 
-import com.elevator.Building.Floor;
 import com.elevator.Elevator.RUNNING;
 
 public class Person {
